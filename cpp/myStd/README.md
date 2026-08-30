@@ -73,10 +73,7 @@
 ---
 
 ## 版本信息
-
-- 当前实现：`myStd::STL::vector<T>`
 - C++ 标准：C++20
-- 依赖：仅标准头文件（`<cstddef>`、`<memory>`、`<algorithm>`、`<stdexcept>`）
 
 - 当前版本：1.0
 

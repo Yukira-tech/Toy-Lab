@@ -1,0 +1,32 @@
+我需要一个 C 语言的内存池实现，具体要求如下：
+
+1. 设计目标：
+   - 减少频繁 malloc/free 导致的性能损耗和内存碎片。
+   - 适用于频繁创建/销毁相同大小对象的场景（如游戏实体、网络包）。
+
+2. 核心数据结构：
+   - MemBlock：空闲块链表节点（内含 next 指针）。
+   - MemChunk：每次大块内存的元数据（含 data 指针，用于整体释放）。
+   - MemPool：池子主结构（包含块大小、每批数量、空闲链表、统计字段）。
+
+3. API 接口：
+   - MemPool *mempool_create(size_t block_size, size_t blocks_per_chunk);
+   - void *mempool_alloc(MemPool *pool);
+   - void mempool_free(MemPool *pool, void *ptr);
+   - void mempool_destroy(MemPool *pool);
+   - void mempool_stats(MemPool *pool);  // 调试用
+
+4. 关键实现逻辑：
+   - block_size 必须对齐到 sizeof(void *)，且至少能容纳一个指针。
+   - 空闲块通过 next 指针串联成单向链表，分配取链表头，归还插链表头。
+   - 当 free_list 为空时，自动调用 pool_grow() 扩容（新增一个 chunk）。
+   - chunk 需要挂入链表，以便 destroy 时统一释放所有内存。
+   - 所有操作的时间复杂度应为 O(1)。
+
+5. 代码风格：
+   - 使用标准 C（C99 或 C11）。
+   - 所有函数必须有清晰的注释，说明功能、参数、返回值和注意事项。
+   - 提供 main() 函数作为使用示例（包含创建、分配、回收、销毁的完整流程）。
+   - 不依赖任何第三方库，仅使用 stdio.h, stdlib.h, string.h, stdbool.h。
+
+请生成完整的 C 代码。

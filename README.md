@@ -50,10 +50,18 @@
 
 ---
 
+## 特色
+
+> 每个项目都有对应的'prompt'或'Agent Skill'供大家指导AI开发
+> 作者的demo不一定好，每个人的需求也不一样，大家可以根据自己的喜欢工具拿到对应的提示词
+> 直到AI改出你想要的效果，或配置自己的 AI Syetem Prompt、以及 Skill
+
+---
+
 ## 目录结构
 
 ```
-CodePlayground/
+Toy-Lab/
 ├── c/          # C 语言玩具
 ├── cpp/        # C++ 玩具与工具
 ├── python/     # Python 脚本与实验

@@ -1,54 +1,46 @@
-我需要实现一个基于 Michael-Scott 算法的无锁并发队列（C++）。
+你需要实现一个基于 Michael-Scott 算法的无锁并发队列，使用 C++17 标准。
 
-## 技术要求
-- 使用 C++17 标准。
-- 使用 `std::atomic` 实现无锁操作（CAS）。
-- 使用 `std::shared_ptr` 管理节点数据生命周期。
-- 使用 `std::optional` 作为出队返回值（空时返回 `std::nullopt`）。
+要求使用 std::atomic 实现无锁操作（CAS），使用 std::shared_ptr 管理节点数据生命周期，使用 std::optional 作为出队返回值（空时返回 std::nullopt）。
 
-## 数据结构
-- 定义内部 `Node` 结构体：
-  - `std::shared_ptr<T> data`
-  - `std::atomic<Node*> next`
-- 成员变量：
-  - `std::atomic<Node*> head_`
-  - `std::atomic<Node*> tail_`
+内部定义 Node 结构体，包含 std::shared_ptr<T> data 和 std::atomic<Node*> next。成员变量为 std::atomic<Node*> head_ 和 tail_。
 
-## 接口要求
-- `LockFreeQueue()`：构造，初始化哨兵节点，头尾指向它。
-- `~LockFreeQueue()`：析构，释放所有节点。
+1. 提供以下接口：
+- LockFreeQueue() 构造函数：初始化一个哨兵节点，头尾都指向它。
+- ~LockFreeQueue() 析构函数：释放所有节点（包括哨兵）。
 - 禁止拷贝构造和拷贝赋值。
-- `void enqueue(T value)`：入队，使用移动语义。
-- `std::optional<T> dequeue()`：出队，空时返回 `std::nullopt`。
-- `bool empty() const`：非原子快照，仅调试用。
+- void enqueue(T value)：入队，使用移动语义。
+- std::optional<T> dequeue()：出队，队列为空时返回 std::nullopt。
+- bool empty() const：非原子快照，仅用于调试，不保证线程安全。
 
-## 实现约束
+2. 实现约束：
 - 使用哨兵节点（dummy node）简化边界条件。
-- 入队时若 `tail->next` 非空，帮助推进 tail。
-- 出队时若 `head == tail && next == nullptr`，返回 `std::nullopt`。
-- 出队时 `head == tail && next != nullptr`，帮助推进 tail。
-- 删除旧哨兵节点的时机：仅在成功 CAS 推进 head 后删除。
+- 入队时如果 tail->next 不为空，则需要帮助推进 tail 指针。
+- 出队时如果 head == tail 且 next == nullptr，说明队列为空，返回 std::nullopt。
+- 出队时如果 head == tail 但 next != nullptr，说明 tail 落后，帮助推进 tail。
+- 只有成功 CAS 推进 head 后，才能安全删除旧的哨兵节点。
 
-## 注释要求
-- 所有函数必须有注释：功能、参数、返回值、核心逻辑。
-- 关键 CAS 操作必须注释其内存序（acquire/release/relaxed）的选择原因。
+3. 内存序要求：
+- 读取 tail 和 head 时使用 memory_order_acquire。
+- CAS 成功时使用 memory_order_release（或 acq_rel）。
+- CAS 失败时使用 memory_order_relaxed。
+- 在关键操作处必须添加注释说明选择该内存序的理由。
+
+4. 注释要求：
+- 所有函数必须有注释，说明功能、参数、返回值和核心逻辑。
+- 所有 CAS 操作必须注释其内存序选择原因。
 - 循环中的重试逻辑必须注释触发条件。
 
-## 输出要求
-- 输出完整可编译的 C++ 代码。
-- 不包含 `main()` 函数。
-- 所有注释用英文或中文均可（但风格统一）。
+5. 输出要求：
+- 输出完整可编译的 C++ 代码，不包含 main() 函数。
 - 代码顶部需包含模块描述注释：算法名称、核心思想、适用场景。
+- 所有注释风格统一，用中文或英文均可。
 
-## 内存序要求
-- 读取 tail/head 时使用 `memory_order_acquire`。
-- CAS 成功时使用 `memory_order_release`（或 `acq_rel`）。
-- CAS 失败时使用 `memory_order_relaxed`。
-- 注释说明为什么需要这些内存序。
-
-## 注意事项（AI 必须遵守）
-- 不要引入互斥锁（mutex）。
-- 不要使用 `std::lock` 或任何阻塞同步原语。
-- 不要用 `new` 分配 `shared_ptr`（使用 `make_shared`）。
-- 不要返回引用或指针，返回 `std::optional<T>` 按值。
+6. 约束：
+- 不要引入互斥锁（mutex）或任何阻塞同步原语。
+- 不要使用 std::lock 或类似机制。
+- 不要用 new 分配 shared_ptr（应使用 make_shared）。
+- 不要返回引用或指针，出队按值返回 std::optional<T>。
 - 不要依赖平台特定的内存模型假设。
+- 不要使用 ABA 问题未处理的指针（但本实现不需要额外处理）。
+
+确保代码可在主流 C++17 编译器（如 GCC、Clang、MSVC）下编译通过，并使用 -pthread 链接。

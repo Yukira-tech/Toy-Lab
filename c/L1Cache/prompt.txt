@@ -1,0 +1,52 @@
+我需要用 C 语言实现一个 L1 Cache 模拟器，模拟组相联缓存的工作机制。
+要求如下：
+
+1. 配置参数：
+   CACHE_SIZE = 32 * 1024（32KB）
+   LINE_SIZE = 64（64字节）
+   WAYS = 8（8路组相联）
+   OFFSET_BITS = 6
+   INDEX_BITS = 6
+   MEM_SIZE = 16 * 1024 * 1024（16MB模拟主存）
+   自动推导 NUM_LINES = CACHE_SIZE / LINE_SIZE（512行），NUM_SETS = NUM_LINES / WAYS（64组）
+
+2. 数据结构：
+   CacheLine：包含 valid（有效位）、dirty（脏位）、tag（标记位）、lru_counter（LRU计数器）、data[LINE_SIZE]（数据）
+   CacheSet：包含 lines[WAYS]（一组内所有行）
+   L1Cache：包含 sets[NUM_SETS]、global_clock（全局时钟）、hits/misses/writebacks（统计）
+   AddrParts：包含 tag、index、offset
+
+3. 地址解析函数 parse_addr(addr)：
+   用位运算拆分地址为 tag、index、offset，不允许使用除法和取模
+
+4. 核心函数：
+   cache_init(L1Cache *cache)：初始化，所有 valid = false，统计清零
+   cache_read(L1Cache *cache, uint64_t addr)：读取一个字节，命中返回数据，未命中加载后返回
+   cache_write(L1Cache *cache, uint64_t addr, uint8_t value)：写入一个字节，写回策略 + 写分配
+   cache_read_block / cache_write_block：批量读写
+   cache_print_stats：打印命中/缺失/写回统计
+
+5. 辅助函数：
+   find_line(CacheSet *set, uint64_t tag)：查找匹配 tag 的行索引，未找到返回 -1
+   find_lru_victim(CacheSet *set)：返回该组 lru_counter 最小的行（无效行优先）
+   load_line_from_memory：从 main_memory 复制 LINE_SIZE 字节到 cache line
+   writeback_line：脏行写回主存，增加 writebacks 计数
+   handle_miss：处理 miss，选 victim、写回脏数据、加载新行
+
+6. 替换策略：LRU，每次访问更新 lru_counter 为 ++global_clock，替换时选最小 counter 的行
+
+7. 读写策略：读分配（Read Allocate）、写回（Write-Back）、写分配（Write-Allocate）
+
+8. main() 必须包含至少 4 个测试用例，每个测试后调用 cache_print_stats()：
+   测试1：顺序访问 1024 字节，验证空间局部性
+   测试2：5 轮重复访问 256 字节，验证时间局部性
+   测试3：写入 512 字节后访问新地址区域触发替换，验证写回次数
+   测试4：步长 = 2 * LINE_SIZE 的跨步访问，验证命中率降低
+
+9. 约束：
+   只使用标准库（stdio.h, stdlib.h, string.h, stdbool.h, stdint.h）
+   不使用 malloc/free，全部静态数组，栈上分配
+   所有函数和结构体带中文注释
+   地址越界时打印错误并跳过
+
+10. 输出完整 C 源文件，编译命令：gcc -o cache_sim cache_sim.c -std=c99 -Wall
